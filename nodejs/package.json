@@ -1,0 +1,14 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "description": "web3 apis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "nadeem bhati",
+  "license": "ISC",
+  "dependencies": {
+    "web3": "^1.2.4"
+  }
+}
