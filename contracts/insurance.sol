@@ -5,14 +5,12 @@ contract insurance {
     address owner;
     address regulator;
     address bank;
-    uint insuranceCount = 0;
-    uint farmerCount = 0;
 
     struct farmer {
         bool isUidGenerated;
         string firstName;
         string lastName;
-        uint insuranceId;
+        uint farmerId;
         string residence;
         uint landArea; //in square metres
         string landNumber; //string with a format of 'state/district/tehsil/village/section/number'
@@ -20,7 +18,7 @@ contract insurance {
     }
 
     struct policy {
-        uint farmerId;
+        uint insuranceId;
         bool isUidGenerated;
         uint premiumAmount;
         string startDate;
@@ -31,14 +29,21 @@ contract insurance {
         bool paid;
     }
 
+    uint[] insuranceIDs;
+    uint[] farmerIDs;
+    uint insuranceCoverCount;
+    uint farmerCount;
+
     mapping (uint => farmer) public farmermapping;
     mapping (uint => policy) public policymapping;
 
     event PolicyClaimed( address indexed _farmerId, address indexed _policyId);
-    event PolicyVerified();
+    //event PolicyVerified();
 
     constructor() public {
         owner = msg.sender;
+        insuranceCoverCount = 0;
+        farmerCount = 0;
     }
 
     modifier onlyOwner(){
@@ -67,18 +72,27 @@ contract insurance {
         uint _premiumAmount,
         string memory _startDate,
         string memory _expiryDate
-    ) public returns(uint) {
-        uint insuranceId = insuranceCount++;
-       // address insuranceId = test(insuranceIdBytes);
-        require(!policymapping[insuranceId].isUidGenerated,
-        "insurance id already exists!");
-        policymapping[insuranceId].isUidGenerated = true;
-        policymapping[insuranceId].premiumAmount = _premiumAmount;
-        policymapping[insuranceId].totalCoverAmount = _totalCoverAmount;
-        policymapping[insuranceId].startDate = _startDate;
-        policymapping[insuranceId].expiryDate = _expiryDate;
+    ) public payable returns(uint) {
+        uint insuranceId = (insuranceCoverCount++)+1000;
+        insuranceIDs.push(insuranceId);
+        policy memory newPolicy;
+
+        // Set all values of the new contract
+        newPolicy.insuranceId = insuranceId;
+        //require(!policymapping[insuranceId].isUidGenerated,
+        //"insurance id already exists!");
+        newPolicy.isUidGenerated = true;
+        newPolicy.premiumAmount = _premiumAmount;
+        newPolicy.totalCoverAmount = _totalCoverAmount;
+        newPolicy.startDate = _startDate;
+        newPolicy.expiryDate = _expiryDate;
+        policymapping[insuranceId] = newPolicy;
 
         return insuranceId;
+    }
+
+    function getInsuranceList() public view returns (uint[] memory){
+        return insuranceIDs;
     }
 
     function getPolicy(uint _insuranceId) public view returns(uint, uint, string memory, string memory) {
@@ -95,26 +109,30 @@ contract insurance {
     function setFarmerData(
         string memory _firstName,
         string memory _lastName,
-        uint _insuranceId,
+        uint _uniqueId,
         string memory _residence,
         uint _landArea,
         string memory _landNumber,
         string memory _landCoordinates
     ) public returns(uint) {
-       // uint uniqueId = sha256(abi.encodePacked(msg.sender, now));
-       uint uniqueId = farmerCount++;
+       // bytes32 uniqueId = sha256(abi.encodePacked(msg.sender, now));
+       //uint uniqueId = farmerCount++;
        // address uniqueId = test(uniqueIdBytes);
-        require(!farmermapping[uniqueId].isUidGenerated,
-        "unique id already exists!");
-        farmermapping[uniqueId].isUidGenerated = true;
-        farmermapping[uniqueId].firstName = _firstName;
-        farmermapping[uniqueId].lastName = _lastName;
-        farmermapping[uniqueId].insuranceId = _insuranceId;
-        farmermapping[uniqueId].residence = _residence;
-        farmermapping[uniqueId].landArea = _landArea;
-        farmermapping[uniqueId].landNumber = _landNumber;
-        farmermapping[uniqueId].landCoordinates = _landCoordinates;
-        policymapping[_insuranceId].farmerId = uniqueId;
+        //require(!farmermapping[uniqueId].isUidGenerated,
+        //"unique id already exists!");
+        uint uniqueId = (farmerCount++)+2000;
+        farmerIDs.push(uniqueId);
+        farmer memory newFarmer;
+        newFarmer.isUidGenerated = true;
+        newFarmer.firstName = _firstName;
+        newFarmer.lastName = _lastName;
+        //newFarmer.insuranceId = _insuranceId;
+        newFarmer.farmerId = _uniqueId;
+        newFarmer.residence = _residence;
+        newFarmer.landArea = _landArea;
+        newFarmer.landNumber = _landNumber;
+        newFarmer.landCoordinates = _landCoordinates;
+        farmermapping[uniqueId] = newFarmer;
 
         return uniqueId;
     }
@@ -130,7 +148,7 @@ contract insurance {
         require(!policymapping[_insuranceId].isSigned,
         "policy is already verified by a regulator");
         policymapping[_insuranceId].isSigned = true;
-        emit PolicyVerified();
+        //emit PolicyVerified();
         string memory  response = "Claimed verified by regulator";
         return response;
     }
